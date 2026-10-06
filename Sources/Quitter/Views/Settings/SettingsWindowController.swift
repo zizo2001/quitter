@@ -25,7 +25,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
     }
 
     private func makeWindow() -> NSWindow {
-        let window = NSWindow(
+        let window = SettingsWindow(
             contentRect: NSRect(x: 0, y: 0, width: 680, height: 460),
             styleMask: [.titled, .closable, .fullSizeContentView],
             backing: .buffered,
@@ -48,4 +48,16 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
     }
 
     private static let autosaveName = "QuitterSettings"
+}
+
+/// Quitter has no main menu (LSUIElement), so standard window shortcuts are handled here.
+private final class SettingsWindow: NSWindow {
+    override func performKeyEquivalent(with event: NSEvent) -> Bool {
+        let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+        if flags == .command, event.charactersIgnoringModifiers == "w" {
+            performClose(nil)
+            return true
+        }
+        return super.performKeyEquivalent(with: event)
+    }
 }

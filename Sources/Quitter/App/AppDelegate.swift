@@ -16,6 +16,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if ProcessInfo.processInfo.environment["QUITTER_REGULAR_POLICY"] == "1" {
             app.setActivationPolicy(.regular)
         }
+        // Verification aid: render Quitter in light or dark without changing the system setting.
+        switch ProcessInfo.processInfo.environment["QUITTER_APPEARANCE"] {
+        case "light": app.appearance = NSAppearance(named: .aqua)
+        case "dark": app.appearance = NSAppearance(named: .darkAqua)
+        default: break
+        }
         #endif
         app.run()
     }

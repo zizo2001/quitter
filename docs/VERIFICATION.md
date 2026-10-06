@@ -72,3 +72,19 @@ One entry per phase gate (PLAN §9). Evidence = command output, `pgrep`, window-
   (handler log: 2 keyUps per cycle). Also with Settings key: ⌃⌥Q opened, then closed, the panel.
   One earlier miss happened right after the recorder had wrongly captured ⌘W with stuck
   modifiers (6912); not reproducible.
+- **Phase 7 — keyboard + polish.** Hotkey changed at Aziz's request to **Caps Lock + Q**: Hyperkey
+  maps Caps Lock to ⌃⌥⇧⌘ (`hyperFlags = 0x1E0000`), so the stored shortcut is ⌃⌥⇧⌘Q
+  (`{"carbonKeyCode":12,"carbonModifiers":6912}`); synthetic ⌃⌥⇧⌘ keystrokes never reached the
+  Recorder, so the value was written to `com.azizali.quitter` defaults directly; ⌃⌥⇧⌘Q then
+  opened and closed the panel and the old ⌃⌥Q did nothing. Full keyboard run with Calculator
+  frontmost: ⌃⌥⇧⌘Q → "calc" → Space (cursor auto-highlights the first match) → "1 selected"
+  (`evidence/phase7-keyboard-ticked.png`) → Return → `pgrep -x Calculator` empty at +500 ms.
+  Right-click menu: Open Quitter / Settings… ⌘, / Launch at Login ✓ / Quit Quitter ⌘Q
+  (`phase7-rightclick.png`); "Settings…" opened Settings. About pane shows icon, "Quitter 1.0.0",
+  tagline, "Built by Aziz Ali", Reveal Project Folder. Light/dark captures via the DEBUG-only
+  `QUITTER_APPEARANCE` override, so the system appearance setting stays untouched
+  (`phase7-light.png`, `phase7-dark.png`). Ask before quitting → in-panel "Quit 1 app?
+  Calculator" (`phase7-confirm.png`), Return confirmed → Calculator gone. "Save selection as
+  Group…" with Notes + Safari selected → Settings › Groups editor prefilled with both
+  (`phase7-save-selection.png`); Esc cancelled (still 1 group). Fix: ⌘W did nothing in Settings
+  (no main menu in an LSUIElement app) → the window now handles ⌘W itself; verified closed.

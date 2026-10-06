@@ -43,6 +43,7 @@ final class StatusBarController: NSObject {
         button.target = self
         button.action = #selector(statusItemClicked(_:))
         button.sendAction(on: [.leftMouseDown, .rightMouseDown])
+        button.setAccessibilityLabel("Quitter")
     }
 
     static func icon(pending: Bool) -> NSImage? {
@@ -66,8 +67,56 @@ final class StatusBarController: NSObject {
         }
     }
 
+    /// Set by `Dependencies`: open Settings, read/toggle Launch at Login.
+    var onOpenSettings: () -> Void = {}
+    var loginItem: LoginItem?
+
     @objc private func statusItemClicked(_ sender: NSStatusBarButton) {
-        togglePanel()
+        if NSApp.currentEvent?.type == .rightMouseDown {
+            showContextMenu()
+        } else {
+            togglePanel()
+        }
+    }
+
+    private func showContextMenu() {
+        closePanel()
+        let menu = NSMenu()
+        menu.addItem(withTitle: "Open Quitter", action: #selector(menuOpenPanel), keyEquivalent: "")
+        menu.addItem(withTitle: "Settings…", action: #selector(menuOpenSettings), keyEquivalent: ",")
+        menu.addItem(.separator())
+        let login = menu.addItem(withTitle: "Launch at Login", action: #selector(menuToggleLogin), keyEquivalent: "")
+        loginItem?.refresh()
+        login.state = loginItem?.isEnabled == true ? .on : .off
+        if loginItem?.isAvailable != true {
+            login.action = nil
+            login.toolTip = "Available when installed"
+        }
+        menu.addItem(.separator())
+        menu.addItem(withTitle: "Quit Quitter", action: #selector(menuQuit), keyEquivalent: "q")
+        for item in menu.items where item.action != nil {
+            item.target = self
+        }
+        statusItem.menu = menu
+        statusItem.button?.performClick(nil)
+        statusItem.menu = nil
+    }
+
+    @objc private func menuOpenPanel() {
+        showPanel()
+    }
+
+    @objc private func menuOpenSettings() {
+        onOpenSettings()
+    }
+
+    @objc private func menuToggleLogin() {
+        guard let loginItem else { return }
+        loginItem.set(!loginItem.isEnabled)
+    }
+
+    @objc private func menuQuit() {
+        NSApp.terminate(nil)
     }
 
     // MARK: Panel
