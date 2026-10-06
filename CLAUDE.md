@@ -51,3 +51,11 @@ make icon      # regenerate Resources/AppIcon.icns
 - If `.glassEffect` renders black inside the transparent panel, use the `.regularMaterial`
   fallback in PLAN §7 and note it in `docs/VERIFICATION.md`
 - If `proc_pid_rusage` is not visible via `import Darwin`, add the `CLibProc` shim target (PLAN §4)
+
+## Learned during the build (verified 2026-10-07)
+- Toolchain needs `swift-tools-version: 6.2` for `.macOS(.v26)`; KeyboardShortcuts must be ≥ 3.1.0 on macOS 27
+- `scripts/build-app.sh` repoints SwiftPM's KeyboardShortcuts `Bundle.module` fallback into the app;
+  if it errors "expected exactly 1 copy", the SwiftPM accessor changed: re-check before shipping
+- Keep icon PNGs at 72 dpi (512 + 1024 px only) or macOS 27 renders the legacy icns broken
+- UI verification: `screencapture` works (Screen Recording granted); computer-use only sees Quitter
+  when launched once with `QUITTER_REGULAR_POLICY=1` (DEBUG builds) so it can be granted

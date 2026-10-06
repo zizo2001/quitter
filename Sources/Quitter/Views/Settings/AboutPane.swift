@@ -12,7 +12,7 @@ struct AboutPane: View {
     var body: some View {
         VStack(spacing: Tokens.Spacing.m) {
             Spacer()
-            Image(nsImage: NSApp.applicationIconImage)
+            Image(nsImage: AppIcons.ownIcon(size: 96))
                 .resizable()
                 .frame(width: 96, height: 96)
                 .accessibilityHidden(true)

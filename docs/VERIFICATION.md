@@ -88,3 +88,43 @@ One entry per phase gate (PLAN §9). Evidence = command output, `pgrep`, window-
   Group…" with Notes + Safari selected → Settings › Groups editor prefilled with both
   (`phase7-save-selection.png`); Esc cancelled (still 1 group). Fix: ⌘W did nothing in Settings
   (no main menu in an LSUIElement app) → the window now handles ⌘W itself; verified closed.
+- **Phase 8 — install.** `make install` → `/Applications/Quitter.app` running
+  (`ps`: `/Applications/Quitter.app/Contents/MacOS/Quitter`), `codesign --verify --deep --strict`
+  OK. Launch at Login: `sfltool dumpbtm` → `com.azizali.quitter`, URL `/Applications/Quitter.app`,
+  Disposition `[enabled, allowed, notified]`; System Settings › Login Items lists Quitter. A real
+  logout/login was **not** performed. Two install bugs found and fixed:
+  1. **Crash without `.build`.** SwiftPM's `Bundle.module` for KeyboardShortcuts looks only at
+     `Quitter.app/<bundle>` (rejected by codesign: "unsealed contents present in the bundle
+     root", even as a symlink) and then the absolute `.build` path. Moving the `.build` copy aside
+     and opening Settings › Shortcuts killed the app (`pgrep` empty). `build-app.sh` now rewrites
+     that fallback literal (same byte length, fails unless exactly one match) to the installed
+     `Contents/Resources` copy, then signs. Re-tested with `.build` copy moved aside: app alive,
+     Recorder shows ⌃⌥⇧⌘Q.
+  2. **Broken app icon.** Every PNG claimed 1024 pt (≈2 dpi), so macOS 27 drew a magnified corner
+     (grey plate + red quarter) in the About pane and in Finder-style rendering. 144-dpi @2x files
+     shrank the art into a corner instead. Fixed by writing 72-dpi PNGs with only the 512/1024 px
+     representations (same as other legacy-icon apps, e.g. AltTab), which renders correctly in
+     light, dark and 96 pt @2x (`evidence/phase8-icon.png`, `phase8-about.png`).
+  **Acceptance test** (the original ask): installed app, ⌃⌥⇧⌘Q, ticked Safari, Notes, TextEdit,
+  Calculator, Activity Monitor ("5 selected", Aziz's own apps unticked;
+  `phase8-acceptance-selected.png`), pressed **Quit 5** once → by +1 s Safari, Notes, Calculator
+  and Activity Monitor were gone; TextEdit raised a save dialog for a restored test document, the
+  panel closed on focus loss, and reopening showed TextEdit with **Force Quit**
+  (`phase8-acceptance-forcequit.png`); clicking it → `pgrep -x TextEdit` empty. Claude, Dia,
+  Discord, NordVPN, Spotify and Wispr Flow kept running. `make test` → 26 tests / 5 suites passed;
+  `swift build` with 0 warnings.
+
+## Deviations from PLAN.md (each forced by a quoted failure above)
+
+| Plan | Shipped | Reason |
+|---|---|---|
+| `swift-tools-version: 6.0` | `6.2` | `'v26' was introduced in PackageDescription 6.2` |
+| KeyboardShortcuts `from: "2.0.0"` | `from: "3.1.0"` | 2.4.0 Recorder never entered recording on macOS 27; 3.x also fixes a Swift 6.3 release-build crash |
+| "Sort by" submenu in ⋯ menu | Inline "Sort by" section | Submenu never opened/tracked from the non-activating panel |
+| `NSApp.activate()` for Settings | `activate(ignoringOtherApps:)` | Cooperative activation refused when opened via ⌘, from the panel |
+| Icon PNGs 16…1024 (+@2x) | 512 + 1024 px at 72 dpi | Full set rendered broken or blurry on macOS 27 |
+| Copy KS bundle to `Contents/Resources` | Same + repoint fallback path in binary | Accessor never looks in `Contents/Resources` |
+| No default hotkey; gate example ⌃⌥Q | User set Caps Lock + Q (Hyperkey ⇒ ⌃⌥⇧⌘Q) | Aziz's request mid-build |
+
+Not done: phase 9 stretch (per-group hotkeys). DEBUG-only verification aids remain in
+`AppDelegate` (`QUITTER_REGULAR_POLICY`, `QUITTER_APPEARANCE`); they are compiled out of release.

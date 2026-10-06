@@ -48,6 +48,9 @@ func drawMaster() {
     symbol.draw(in: NSRect(origin: origin, size: size))
 }
 
+/// Renders one iconset PNG at 72 dpi (logical size = pixel size). macOS 27 places legacy .icns
+/// art on its icon plate using the PNG's DPI: the original 1024-pt-for-every-size metadata drew
+/// a magnified corner, 144-dpi @2x files drew the art shrunk into a corner.
 func renderPNG(pixels: Int) -> Data? {
     guard
         let rep = NSBitmapImageRep(
@@ -57,21 +60,23 @@ func renderPNG(pixels: Int) -> Data? {
         ),
         let context = NSGraphicsContext(bitmapImageRep: rep)
     else { return nil }
-    rep.size = NSSize(width: canvas, height: canvas)
+    rep.size = NSSize(width: pixels, height: pixels)
     NSGraphicsContext.saveGraphicsState()
     NSGraphicsContext.current = context
     context.imageInterpolation = .high
+    let transform = NSAffineTransform()
+    transform.scale(by: CGFloat(pixels) / canvas)
+    transform.concat()
     drawMaster()
     context.flushGraphics()
     NSGraphicsContext.restoreGraphicsState()
     return rep.representation(using: .png, properties: [:])
 }
 
+// Only the large representations, like other legacy-icon apps: with the full 16…1024 set the
+// system picked a small rep for 96-pt @2x drawing and upscaled it (blurry); it downsamples
+// cleanly from these two.
 let entries: [(name: String, pixels: Int)] = [
-    ("icon_16x16", 16), ("icon_16x16@2x", 32),
-    ("icon_32x32", 32), ("icon_32x32@2x", 64),
-    ("icon_128x128", 128), ("icon_128x128@2x", 256),
-    ("icon_256x256", 256), ("icon_256x256@2x", 512),
     ("icon_512x512", 512), ("icon_512x512@2x", 1024),
 ]
 
