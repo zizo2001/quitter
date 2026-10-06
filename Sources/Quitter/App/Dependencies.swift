@@ -48,6 +48,7 @@ final class Dependencies {
             statusBar.closePanel()
             settingsWindow.show()
         }
+        Hotkeys.install { statusBar.togglePanel() }
         panelModel.onSaveSelectionAsGroup = { bundleIDs in
             statusBar.closePanel()
             navigation.editingGroup = QuitGroup(name: "", bundleIDs: bundleIDs)

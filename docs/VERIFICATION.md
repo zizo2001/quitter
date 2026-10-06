@@ -60,3 +60,15 @@ One entry per phase gate (PLAN §9). Evidence = command output, `pgrep`, window-
   "com.apple.Notes"],"name":"Focus","symbol":"moon",…}`. Relaunched Quitter → chip
   "Focus · 2" (`evidence/phase5-chip.png`); click → chip tinted, Notes + Safari ticked, "Quit 2"
   (`phase5-chip-selected.png`); Quit → first poll at +500 ms `Safari=[] Notes=[]`.
+- **Phase 6 — hotkey.** Real failure on KeyboardShortcuts 2.4.0 (plan's `from: "2.0.0"`): clicking
+  the Recorder showed a text caret and "Record Shortcut" never switched to "Press Shortcut"; ⌃⌥Q
+  was not captured and a typed "x" landed as text. Upstream 3.1.0 (2026-09-11, "Improve macOS 27
+  compatibility": AppKit on macOS 26+ ends/restarts field editing, which ended recording; 3.0.x
+  also fixes a "release build crash with the Swift 6.3 compiler") → dependency now
+  `from: "3.1.0"`; no API used by Quitter changed. With 3.1.0: Recorder showed "Press Shortcut",
+  ⌃⌥Q recorded (`defaults`: `{"carbonKeyCode":12,"carbonModifiers":6144}`). With Calculator
+  frontmost: ⌃⌥Q → panel open, Calculator still frontmost, typed "spot" went to the search field
+  (`evidence/phase6-hotkey-open.png`); ⌃⌥Q again → panel gone. Repeated 3× on a fresh process
+  (handler log: 2 keyUps per cycle). Also with Settings key: ⌃⌥Q opened, then closed, the panel.
+  One earlier miss happened right after the recorder had wrongly captured ⌘W with stuck
+  modifiers (6912); not reproducible.
