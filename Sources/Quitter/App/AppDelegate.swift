@@ -11,6 +11,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         app.delegate = delegate
         // No Dock icon even when run without a bundle (swift run).
         app.setActivationPolicy(.accessory)
+        #if DEBUG
+        // Verification aid: lets UI-automation tools that only index regular apps see Quitter.
+        if ProcessInfo.processInfo.environment["QUITTER_REGULAR_POLICY"] == "1" {
+            app.setActivationPolicy(.regular)
+        }
+        #endif
         app.run()
     }
 

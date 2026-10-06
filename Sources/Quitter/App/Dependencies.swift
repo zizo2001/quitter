@@ -8,6 +8,8 @@ final class Dependencies {
     let monitor: AppMonitor
     let coordinator: QuitCoordinator
     let sampler: UsageSampler
+    let loginItem: LoginItem
+    let settingsWindow: SettingsWindowController
     let panelModel: PanelModel
     let statusBar: StatusBarController
 
@@ -26,6 +28,20 @@ final class Dependencies {
         sampler = UsageSampler(monitor: monitor)
         let panelModel = panelModel
         sampler.onFirstSample = { panelModel.freezeSortOrder() }
+        loginItem = LoginItem()
+        settingsWindow = SettingsWindowController(dependencies: SettingsDependencies(
+            settings: settings,
+            protected: protected,
+            loginItem: loginItem,
+            monitor: monitor,
+            navigation: SettingsNavigation()
+        ))
         statusBar = StatusBarController(model: panelModel, settings: settings, sampler: sampler)
+        let statusBar = statusBar
+        let settingsWindow = settingsWindow
+        panelModel.onOpenSettings = {
+            statusBar.closePanel()
+            settingsWindow.show()
+        }
     }
 }

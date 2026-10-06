@@ -40,3 +40,16 @@ One entry per phase gate (PLAN §9). Evidence = command output, `pgrep`, window-
   non-activating panel while another app is active → sort options are an inline menu section
   (`phase3-menu.png`); (3) Swift 6.3 compiler crash (`SmallVector unable to grow`) on
   `Binding(set: model.setSortOrder)` → explicit closure.
+- **Phase 4 — Settings.** Gear and ⌘, both open "Quitter Settings" (680×460) in front: with
+  Calculator verifiably frontmost (`lsappinfo front`), ⌘, from the panel → `lsappinfo front` =
+  Quitter, window key (`evidence/phase4-cmd-comma.png`). Cooperative `NSApp.activate()` was
+  refused there (logged `isActive=false`), so the controller uses `activate(ignoringOtherApps:)`.
+  Toggled Show background apps + Ask before quitting → `defaults read` showed both = 1; after
+  relaunch the switches were still on and the panel listed accessory apps. Protected › + › Add
+  Running App… › Calculator → `protected.json` gained `com.apple.calculator`; panel search "calc"
+  → "No apps match “calc”" while `pgrep` showed Calculator 22017 running
+  (`phase4-calc-hidden.png`); removed it again with −. After `make install`, Launch at Login
+  toggle → on (`phase4-login-on.png`) and System Settings › General › Login Items › Open at Login
+  lists "Quitter — Application".
+  Test-harness note: computer-use only indexes regular-policy apps, so a DEBUG-only
+  `QUITTER_REGULAR_POLICY=1` env override was added once to let it grant `com.azizali.quitter`.
