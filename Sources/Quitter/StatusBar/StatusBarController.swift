@@ -12,11 +12,15 @@ final class StatusBarController: NSObject {
 
     var isPanelVisible: Bool { panel.isVisible && !panel.isClosing }
 
-    override init() {
+    private let model: PanelModel
+
+    init(model: PanelModel) {
+        self.model = model
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         super.init()
         configureButton()
-        let host = NSHostingView(rootView: PanelView { [weak self] height in
+        model.onClose = { [weak self] in self?.closePanel() }
+        let host = NSHostingView(rootView: PanelView(model: model) { [weak self] height in
             self?.panel.setContentHeight(height)
         })
         host.sizingOptions = []
@@ -62,6 +66,7 @@ final class StatusBarController: NSObject {
 
     func showPanel() {
         guard !isPanelVisible else { return }
+        model.panelWillOpen()
         panel.present(topCenter: panelTopCenter())
         installMonitors()
     }
@@ -152,10 +157,6 @@ final class StatusBarController: NSObject {
 
     /// Returns true when the key was consumed.
     private func handleKey(_ key: KeyPress) -> Bool {
-        if key.code == KeyPress.escape {
-            closePanel()
-            return true
-        }
-        return false
+        model.handleKey(key)
     }
 }
