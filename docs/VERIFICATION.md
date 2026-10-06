@@ -53,3 +53,10 @@ One entry per phase gate (PLAN §9). Evidence = command output, `pgrep`, window-
   lists "Quitter — Application".
   Test-harness note: computer-use only indexes regular-policy apps, so a DEBUG-only
   `QUITTER_REGULAR_POLICY=1` env override was added once to let it grant `com.azizali.quitter`.
+- **Phase 5 — groups.** `make test` → 26 tests / 5 suites passed (4 GroupStore tests: temp-dir
+  round trip, upsert keeps app order, remove/move persist, corrupt file moved aside). Settings ›
+  Groups › + → editor (Save disabled while name empty) → name "Focus", symbol moon, Add Apps › Add
+  from running… → Safari, Notes → Save. `groups.json`: `{"bundleIDs":["com.apple.Safari",
+  "com.apple.Notes"],"name":"Focus","symbol":"moon",…}`. Relaunched Quitter → chip
+  "Focus · 2" (`evidence/phase5-chip.png`); click → chip tinted, Notes + Safari ticked, "Quit 2"
+  (`phase5-chip-selected.png`); Quit → first poll at +500 ms `Safari=[] Notes=[]`.

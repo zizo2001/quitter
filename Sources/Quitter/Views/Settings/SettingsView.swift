@@ -1,13 +1,14 @@
 import SwiftUI
 
 enum SettingsPane: String, CaseIterable, Identifiable {
-    case general, protected
+    case general, groups, protected
 
     var id: String { rawValue }
 
     var title: String {
         switch self {
         case .general: "General"
+        case .groups: "Groups"
         case .protected: "Protected"
         }
     }
@@ -15,6 +16,7 @@ enum SettingsPane: String, CaseIterable, Identifiable {
     var symbol: String {
         switch self {
         case .general: "gearshape"
+        case .groups: "square.stack"
         case .protected: "lock.shield"
         }
     }
@@ -22,6 +24,7 @@ enum SettingsPane: String, CaseIterable, Identifiable {
     var tint: Color {
         switch self {
         case .general: .gray
+        case .groups: .blue
         case .protected: .green
         }
     }
@@ -31,6 +34,8 @@ enum SettingsPane: String, CaseIterable, Identifiable {
 @Observable
 final class SettingsNavigation {
     var selection: SettingsPane? = .general
+    /// Group open in the editor sheet (a new draft or an existing group).
+    var editingGroup: QuitGroup?
 }
 
 /// Everything the Settings window needs, passed in from `Dependencies`.
@@ -38,6 +43,7 @@ final class SettingsNavigation {
 struct SettingsDependencies {
     let settings: AppSettings
     let protected: ProtectedStore
+    let groups: GroupStore
     let loginItem: LoginItem
     let monitor: AppMonitor
     let navigation: SettingsNavigation
@@ -73,6 +79,8 @@ struct SettingsView: View {
         switch navigation.selection ?? .general {
         case .general:
             GeneralPane(settings: dependencies.settings, loginItem: dependencies.loginItem)
+        case .groups:
+            GroupsPane(store: dependencies.groups, monitor: dependencies.monitor, navigation: navigation)
         case .protected:
             ProtectedPane(store: dependencies.protected, monitor: dependencies.monitor)
         }

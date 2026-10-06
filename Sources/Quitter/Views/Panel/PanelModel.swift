@@ -11,6 +11,7 @@ final class PanelModel {
     let settings: AppSettings
     let protected: ProtectedStore
     let coordinator: QuitCoordinator
+    let groups: GroupStore
 
     var query = "" {
         didSet {
@@ -34,12 +35,21 @@ final class PanelModel {
 
     @ObservationIgnored var onClose: () -> Void = {}
     @ObservationIgnored var onOpenSettings: () -> Void = {}
+    /// Receives the bundle IDs of the current selection, in list order.
+    @ObservationIgnored var onSaveSelectionAsGroup: ([String]) -> Void = { _ in }
 
-    init(monitor: AppMonitor, settings: AppSettings, protected: ProtectedStore, coordinator: QuitCoordinator) {
+    init(
+        monitor: AppMonitor,
+        settings: AppSettings,
+        protected: ProtectedStore,
+        coordinator: QuitCoordinator,
+        groups: GroupStore
+    ) {
         self.monitor = monitor
         self.settings = settings
         self.protected = protected
         self.coordinator = coordinator
+        self.groups = groups
         trackMembership()
     }
 
@@ -65,10 +75,59 @@ final class PanelModel {
         return ("No apps match \u{201C}\(trimmed)\u{201D}", nil)
     }
 
+    /// Running, unprotected apps that are not already being quit.
+    private var selectableApps: [RunningApp] {
+        AppFilter.apply(apps: monitor.apps, protected: protected.bundleIDs, query: "", sort: .name)
+            .filter { !coordinator.state(for: $0.id).isPending }
+    }
+
     /// Selected, still-running, unprotected apps that are not already being quit.
     var quitTargets: [RunningApp] {
-        AppFilter.apply(apps: monitor.apps, protected: protected.bundleIDs, query: "", sort: .name)
-            .filter { selection.contains($0.id) && !coordinator.state(for: $0.id).isPending }
+        selectableApps.filter { selection.contains($0.id) }
+    }
+
+    // MARK: Groups
+
+    struct Chip: Identifiable {
+        let group: QuitGroup
+        /// Running, selectable members (every instance of each bundle).
+        let pids: [pid_t]
+        let isFullySelected: Bool
+        var id: UUID { group.id }
+    }
+
+    var chips: [Chip] {
+        let apps = selectableApps
+        return groups.groups.map { group in
+            let members = Set(group.bundleIDs)
+            let pids = apps.filter { $0.bundleID.map(members.contains) ?? false }.map(\.id)
+            return Chip(
+                group: group,
+                pids: pids,
+                isFullySelected: !pids.isEmpty && pids.allSatisfy(selection.contains)
+            )
+        }
+    }
+
+    /// Adds the group's running members to the selection; if all are already selected, removes them.
+    func toggleGroup(_ id: UUID) {
+        guard let chip = chips.first(where: { $0.id == id }), !chip.pids.isEmpty else { return }
+        withAnimation(.snappy) {
+            if chip.isFullySelected {
+                selection.subtract(chip.pids)
+            } else {
+                selection.formUnion(chip.pids)
+            }
+        }
+    }
+
+    func saveSelectionAsGroup() {
+        var seen = Set<String>()
+        let bundleIDs = visibleApps
+            .filter { selection.contains($0.id) }
+            .compactMap(\.bundleID)
+            .filter { seen.insert($0).inserted }
+        onSaveSelectionAsGroup(bundleIDs)
     }
 
     // MARK: Lifecycle

@@ -11,15 +11,20 @@ struct PanelView: View {
 
     var body: some View {
         let apps = model.visibleApps
+        let chips = model.chips
         VStack(spacing: 0) {
             header
             SearchField(text: $model.query, isFocused: $searchFocused)
                 .padding(.horizontal, Tokens.Spacing.m)
                 .padding(.bottom, Tokens.Spacing.s)
+            if !chips.isEmpty {
+                GroupChipsRow(chips: chips, onToggle: model.toggleGroup)
+                    .padding(.bottom, Tokens.Spacing.s)
+            }
             if apps.isEmpty {
                 EmptyState(title: model.emptyMessage.title, caption: model.emptyMessage.caption)
             } else {
-                list(apps)
+                list(apps, hasChips: !chips.isEmpty)
             }
             PanelFooter(selectedCount: model.quitTargets.count, onQuit: model.requestQuit)
         }
@@ -60,6 +65,9 @@ struct PanelView: View {
                 }
                 .pickerStyle(.inline)
                 Divider()
+                Button("Save selection as Group…", action: model.saveSelectionAsGroup)
+                    .disabled(model.selection.isEmpty)
+                Divider()
                 Button("Select All", action: model.selectAllVisible)
                 Button("Select None", action: model.selectNone)
             } label: {
@@ -74,13 +82,14 @@ struct PanelView: View {
         .frame(height: Tokens.Size.header)
     }
 
-    private var chromeHeight: CGFloat {
-        Tokens.Size.header + Self.searchBlock + Tokens.Size.footer
+    private func chromeHeight(hasChips: Bool) -> CGFloat {
+        let chips = hasChips ? Tokens.Size.chips + Tokens.Spacing.s : 0
+        return Tokens.Size.header + Self.searchBlock + chips + Tokens.Size.footer
     }
 
-    private func list(_ apps: [RunningApp]) -> some View {
+    private func list(_ apps: [RunningApp], hasChips: Bool) -> some View {
         let content = CGFloat(apps.count) * Tokens.Size.row + Tokens.Spacing.s
-        let maxList = Tokens.Size.panelMaxHeight - chromeHeight
+        let maxList = Tokens.Size.panelMaxHeight - chromeHeight(hasChips: hasChips)
         return ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(spacing: 0) {
