@@ -2,16 +2,24 @@ import SwiftUI
 
 struct AppRow: View {
     let app: RunningApp
+    let state: QuitState
     let isSelected: Bool
     let isHighlighted: Bool
     let showUsage: Bool
     let onToggle: () -> Void
+    let onForceQuit: () -> Void
+
+    private var isRequested: Bool {
+        if case .requested = state { return true }
+        return false
+    }
 
     var body: some View {
         HStack(spacing: Tokens.Spacing.m) {
             Toggle("", isOn: Binding(get: { isSelected }, set: { _ in onToggle() }))
                 .toggleStyle(.checkbox)
                 .labelsHidden()
+                .disabled(state.isPending)
                 .accessibilityLabel(accessibilityLabel)
             Image(nsImage: app.icon)
                 .resizable()
@@ -32,9 +40,11 @@ struct AppRow: View {
                 }
             }
             Spacer(minLength: 0)
+            trailing
         }
         .padding(.horizontal, Tokens.Spacing.s)
         .frame(height: Tokens.Size.row)
+        .opacity(isRequested ? 0.5 : 1)
         .background {
             if isHighlighted {
                 RoundedRectangle(cornerRadius: Tokens.Radius.row, style: .continuous)
@@ -43,6 +53,24 @@ struct AppRow: View {
         }
         .contentShape(Rectangle())
         .onTapGesture(perform: onToggle)
+    }
+
+    @ViewBuilder
+    private var trailing: some View {
+        switch state {
+        case .requested:
+            ProgressView()
+                .controlSize(.small)
+                .accessibilityLabel("Quitting \(app.name)")
+        case .stuck:
+            Button("Force Quit", action: onForceQuit)
+                .buttonStyle(.borderedProminent)
+                .tint(.red)
+                .controlSize(.small)
+                .accessibilityLabel("Force Quit \(app.name)")
+        case .idle, .terminated:
+            EmptyView()
+        }
     }
 
     private var accessibilityLabel: String {

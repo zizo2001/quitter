@@ -13,13 +13,18 @@ final class StatusBarController: NSObject {
     var isPanelVisible: Bool { panel.isVisible && !panel.isClosing }
 
     private let model: PanelModel
+    private let settings: AppSettings
 
-    init(model: PanelModel) {
+    init(model: PanelModel, settings: AppSettings) {
         self.model = model
+        self.settings = settings
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         super.init()
         configureButton()
         model.onClose = { [weak self] in self?.closePanel() }
+        model.coordinator.onPendingCountChange = { [weak self] old, new in
+            self?.pendingCountChanged(from: old, to: new)
+        }
         let host = NSHostingView(rootView: PanelView(model: model) { [weak self] height in
             self?.panel.setContentHeight(height)
         })
@@ -46,6 +51,17 @@ final class StatusBarController: NSObject {
         )?.withSymbolConfiguration(config)
         image?.isTemplate = true
         return image
+    }
+
+    /// Filled icon while quits are pending; close the panel 0.6 s after the last one finishes.
+    private func pendingCountChanged(from old: Int, to new: Int) {
+        statusItem.button?.image = Self.icon(pending: new > 0)
+        guard old > 0, new == 0, settings.closePanelAfterQuit else { return }
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .milliseconds(600))
+            guard let self, self.model.coordinator.pendingCount == 0, self.isPanelVisible else { return }
+            self.closePanel()
+        }
     }
 
     @objc private func statusItemClicked(_ sender: NSStatusBarButton) {

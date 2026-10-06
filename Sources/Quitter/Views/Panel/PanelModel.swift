@@ -1,5 +1,6 @@
 import AppKit
 import Observation
+import SwiftUI
 
 /// View state for the panel: query, selection, keyboard cursor and the frozen sort order.
 /// Long-lived (owned by `Dependencies`), so it survives the panel closing.
@@ -9,11 +10,19 @@ final class PanelModel {
     let monitor: AppMonitor
     let settings: AppSettings
     let protected: ProtectedStore
+    let coordinator: QuitCoordinator
 
-    var query = ""
+    var query = "" {
+        didSet {
+            guard query != oldValue else { return }
+            cursor = query.isEmpty ? nil : visibleApps.first?.id
+        }
+    }
     var selection: Set<pid_t> = []
     /// Row highlighted by the keyboard cursor.
     var cursor: pid_t?
+    /// Apps awaiting confirmation when "Ask before quitting" is on.
+    var confirming: [RunningApp]?
     /// Incremented to ask the view to focus the search field.
     private(set) var focusRequest = 0
     var isSearchFocused = false
@@ -24,11 +33,13 @@ final class PanelModel {
     private var sortVersion = 0
 
     @ObservationIgnored var onClose: () -> Void = {}
+    @ObservationIgnored var onOpenSettings: () -> Void = {}
 
-    init(monitor: AppMonitor, settings: AppSettings, protected: ProtectedStore) {
+    init(monitor: AppMonitor, settings: AppSettings, protected: ProtectedStore, coordinator: QuitCoordinator) {
         self.monitor = monitor
         self.settings = settings
         self.protected = protected
+        self.coordinator = coordinator
         trackMembership()
     }
 
@@ -54,16 +65,22 @@ final class PanelModel {
         return ("No apps match \u{201C}\(trimmed)\u{201D}", nil)
     }
 
+    /// Selected, still-running, unprotected apps that are not already being quit.
+    var quitTargets: [RunningApp] {
+        AppFilter.apply(apps: monitor.apps, protected: protected.bundleIDs, query: "", sort: .name)
+            .filter { selection.contains($0.id) && !coordinator.state(for: $0.id).isPending }
+    }
+
     // MARK: Lifecycle
 
     func panelWillOpen() {
         monitor.rebuild()
         freezeSortOrder()
-        cursor = nil
+        cursor = query.isEmpty ? nil : visibleApps.first?.id
         focusRequest += 1
     }
 
-    private func freezeSortOrder() {
+    func freezeSortOrder() {
         sortUsage = monitor.apps.reduce(into: [:]) { $0[$1.id] = $1.usage }
         sortVersion += 1
     }
@@ -86,27 +103,119 @@ final class PanelModel {
     // MARK: Selection
 
     func toggle(_ pid: pid_t) {
-        if selection.contains(pid) {
-            selection.remove(pid)
-        } else {
-            selection.insert(pid)
+        guard !coordinator.state(for: pid).isPending else { return }
+        withAnimation(.snappy) {
+            if selection.contains(pid) {
+                selection.remove(pid)
+            } else {
+                selection.insert(pid)
+            }
         }
+    }
+
+    func selectAllVisible() {
+        let pids = visibleApps.map(\.id).filter { !coordinator.state(for: $0).isPending }
+        withAnimation(.snappy) { selection.formUnion(pids) }
+    }
+
+    func selectNone() {
+        withAnimation(.snappy) { selection.removeAll() }
+    }
+
+    // MARK: Quitting
+
+    func requestQuit() {
+        let targets = quitTargets
+        guard !targets.isEmpty else { return }
+        if settings.confirmBeforeQuit {
+            confirming = targets
+        } else {
+            performQuit(targets)
+        }
+    }
+
+    func confirmQuit() {
+        guard let targets = confirming else { return }
+        confirming = nil
+        performQuit(targets)
+    }
+
+    func cancelConfirmation() {
+        confirming = nil
+    }
+
+    private func performQuit(_ targets: [RunningApp]) {
+        selection.removeAll()
+        coordinator.quit(pids: targets.map(\.id))
+    }
+
+    func forceQuit(_ pid: pid_t) {
+        coordinator.forceQuit(pid: pid)
     }
 
     // MARK: Keyboard
 
     /// Returns true when the key was consumed.
     func handleKey(_ key: KeyPress) -> Bool {
-        switch key.code {
-        case KeyPress.escape:
-            if query.isEmpty {
-                onClose()
-            } else {
-                query = ""
+        if confirming != nil {
+            switch key.code {
+            case KeyPress.escape: cancelConfirmation()
+            case KeyPress.returnKey, KeyPress.keypadEnter: confirmQuit()
+            default: break
             }
             return true
-        default:
-            return false
         }
+        if key.command {
+            switch key.characters {
+            case "a":
+                key.shift ? selectNone() : selectAllVisible()
+                return true
+            case ",":
+                onOpenSettings()
+                return true
+            default:
+                return false
+            }
+        }
+        switch key.code {
+        case KeyPress.escape:
+            if query.isEmpty { onClose() } else { query = "" }
+            return true
+        case KeyPress.upArrow:
+            moveCursor(by: -1)
+            return true
+        case KeyPress.downArrow:
+            moveCursor(by: 1)
+            return true
+        case KeyPress.returnKey, KeyPress.keypadEnter:
+            requestQuit()
+            return true
+        case KeyPress.space:
+            guard let cursor else { return false }
+            toggle(cursor)
+            return true
+        default:
+            break
+        }
+        if !isSearchFocused, !key.control, !key.option, let scalar = key.characters.unicodeScalars.first,
+           !CharacterSet.controlCharacters.contains(scalar),
+           !(0xF700...0xF8FF).contains(scalar.value) { // AppKit function-key range
+            query += key.characters
+            focusRequest += 1
+            return true
+        }
+        return false
+    }
+
+    private func moveCursor(by step: Int) {
+        let pids = visibleApps.map(\.id)
+        guard !pids.isEmpty else { return }
+        let next: Int
+        if let cursor, let index = pids.firstIndex(of: cursor) {
+            next = (index + step + pids.count) % pids.count
+        } else {
+            next = step > 0 ? 0 : pids.count - 1
+        }
+        cursor = pids[next]
     }
 }

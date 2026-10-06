@@ -18,3 +18,12 @@ One entry per phase gate (PLAN §9). Evidence = command output, `pgrep`, window-
   panel grew 436→480 pt with top edge fixed (`phase1-textedit-added.png`); typed "text" → only
   TextEdit (`phase1-search-text.png`); `osascript -e 'quit app "TextEdit"'` → `pgrep` empty and row
   gone, "No apps match “text”" (`phase1-textedit-removed.png`).
+- **Phase 2 — quit + escalation.** `make test` → 16 tests / 3 suites passed (7 QuitCoordinator
+  tests with fake `Terminating` + fake clock). `open -a TextEdit; open -a Calculator`, ticked both
+  (`evidence/phase2-selected.png`: "2 selected", red "Quit 2"), clicked Quit → first `pgrep` poll
+  at +500 ms: `TextEdit=[] Calculator=[]`; panel auto-closed. Then TextEdit "Untitled — Edited":
+  search "textedit" → Space → Return → save dialog appeared, `pgrep` still 18362, row went
+  straight to **Force Quit** (`phase2-b-requested.png`; `terminate()` returned false, the
+  immediate-stuck path), icon `xmark.circle.fill` (`phase2-b-icon.png`). Esc×2 closed the panel;
+  reopening showed the same Force Quit row (`phase2-b-reopened.png`); clicking it → `pgrep -x
+  TextEdit` empty, panel closed, icon back to outline (`phase2-b-icon-after.png`).

@@ -21,8 +21,18 @@ struct PanelView: View {
             } else {
                 list(apps)
             }
+            PanelFooter(selectedCount: model.quitTargets.count, onQuit: model.requestQuit)
         }
         .frame(width: Tokens.Size.panelWidth)
+        .overlay {
+            if let confirming = model.confirming {
+                ConfirmQuitOverlay(
+                    apps: confirming,
+                    onCancel: model.cancelConfirmation,
+                    onConfirm: model.confirmQuit
+                )
+            }
+        }
         .panelBackground()
         .fixedSize(horizontal: false, vertical: true)
         .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { onHeightChange($0) }
@@ -40,7 +50,7 @@ struct PanelView: View {
     }
 
     private var chromeHeight: CGFloat {
-        Tokens.Size.header + Self.searchBlock
+        Tokens.Size.header + Self.searchBlock + Tokens.Size.footer
     }
 
     private func list(_ apps: [RunningApp]) -> some View {
@@ -52,16 +62,20 @@ struct PanelView: View {
                     ForEach(apps) { app in
                         AppRow(
                             app: app,
+                            state: model.coordinator.state(for: app.id),
                             isSelected: model.selection.contains(app.id),
                             isHighlighted: model.cursor == app.id,
                             showUsage: model.settings.showUsage,
-                            onToggle: { model.toggle(app.id) }
+                            onToggle: { model.toggle(app.id) },
+                            onForceQuit: { model.forceQuit(app.id) }
                         )
                         .id(app.id)
+                        .transition(.move(edge: .trailing).combined(with: .opacity))
                     }
                 }
                 .padding(.horizontal, Tokens.Size.listInset)
                 .padding(.bottom, Tokens.Spacing.s)
+                .animation(.smooth(duration: Tokens.Motion.rowExit), value: apps.map(\.id))
             }
             .scrollIndicators(.automatic)
             .frame(height: min(content, maxList))

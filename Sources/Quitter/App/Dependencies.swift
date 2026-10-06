@@ -6,6 +6,7 @@ final class Dependencies {
     let settings: AppSettings
     let protected: ProtectedStore
     let monitor: AppMonitor
+    let coordinator: QuitCoordinator
     let panelModel: PanelModel
     let statusBar: StatusBarController
 
@@ -13,7 +14,14 @@ final class Dependencies {
         settings = AppSettings()
         protected = ProtectedStore()
         monitor = AppMonitor(settings: settings)
-        panelModel = PanelModel(monitor: monitor, settings: settings, protected: protected)
-        statusBar = StatusBarController(model: panelModel)
+        let settings = settings
+        coordinator = QuitCoordinator(
+            terminator: WorkspaceTerminator(),
+            forceQuitDelay: { settings.forceQuitDelay }
+        )
+        panelModel = PanelModel(
+            monitor: monitor, settings: settings, protected: protected, coordinator: coordinator
+        )
+        statusBar = StatusBarController(model: panelModel, settings: settings)
     }
 }
