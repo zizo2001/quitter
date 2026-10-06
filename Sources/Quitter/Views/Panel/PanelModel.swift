@@ -80,6 +80,12 @@ final class PanelModel {
         focusRequest += 1
     }
 
+    /// User-initiated sort change: re-sort on the latest numbers.
+    func setSortOrder(_ order: SortOrder) {
+        settings.sortOrder = order
+        freezeSortOrder()
+    }
+
     func freezeSortOrder() {
         sortUsage = monitor.apps.reduce(into: [:]) { $0[$1.id] = $1.usage }
         sortVersion += 1

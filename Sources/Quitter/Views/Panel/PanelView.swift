@@ -41,9 +41,34 @@ struct PanelView: View {
     }
 
     private var header: some View {
-        HStack {
+        HStack(spacing: Tokens.Spacing.s) {
             Text("Quitter").font(.headline)
             Spacer()
+            Button(action: model.onOpenSettings) {
+                Image(systemName: "gearshape")
+            }
+            .buttonStyle(.borderless)
+            .help("Settings")
+            .accessibilityLabel("Settings")
+            Menu {
+                // Inline, not a submenu: submenus do not track reliably in a menu opened
+                // from a non-activating panel while another app is active.
+                Picker("Sort by", selection: Binding(get: { model.settings.sortOrder }, set: { model.setSortOrder($0) })) {
+                    ForEach(SortOrder.allCases) { order in
+                        Text(order.title).tag(order)
+                    }
+                }
+                .pickerStyle(.inline)
+                Divider()
+                Button("Select All", action: model.selectAllVisible)
+                Button("Select None", action: model.selectNone)
+            } label: {
+                Image(systemName: "ellipsis.circle")
+            }
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+            .fixedSize()
+            .accessibilityLabel("More")
         }
         .padding(.horizontal, Tokens.Spacing.l)
         .frame(height: Tokens.Size.header)

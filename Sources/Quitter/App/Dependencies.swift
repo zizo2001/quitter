@@ -7,6 +7,7 @@ final class Dependencies {
     let protected: ProtectedStore
     let monitor: AppMonitor
     let coordinator: QuitCoordinator
+    let sampler: UsageSampler
     let panelModel: PanelModel
     let statusBar: StatusBarController
 
@@ -22,6 +23,9 @@ final class Dependencies {
         panelModel = PanelModel(
             monitor: monitor, settings: settings, protected: protected, coordinator: coordinator
         )
-        statusBar = StatusBarController(model: panelModel, settings: settings)
+        sampler = UsageSampler(monitor: monitor)
+        let panelModel = panelModel
+        sampler.onFirstSample = { panelModel.freezeSortOrder() }
+        statusBar = StatusBarController(model: panelModel, settings: settings, sampler: sampler)
     }
 }

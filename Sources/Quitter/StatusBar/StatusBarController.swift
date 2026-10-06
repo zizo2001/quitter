@@ -14,10 +14,12 @@ final class StatusBarController: NSObject {
 
     private let model: PanelModel
     private let settings: AppSettings
+    private let sampler: UsageSampler
 
-    init(model: PanelModel, settings: AppSettings) {
+    init(model: PanelModel, settings: AppSettings, sampler: UsageSampler) {
         self.model = model
         self.settings = settings
+        self.sampler = sampler
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         super.init()
         configureButton()
@@ -85,9 +87,11 @@ final class StatusBarController: NSObject {
         model.panelWillOpen()
         panel.present(topCenter: panelTopCenter())
         installMonitors()
+        sampler.start()
     }
 
     func closePanel() {
+        sampler.stop()
         removeMonitors()
         panel.dismiss()
     }
@@ -131,8 +135,9 @@ final class StatusBarController: NSObject {
             handler: { [weak self] event in
                 let window = event.window
                 MainActor.assumeIsolated {
-                    guard let self else { return }
-                    if window !== self.panel && window !== buttonWindow {
+                    guard let self, let window else { return }
+                    // Our own menus (⋯ menu, submenus) are pop-up level windows: not "outside".
+                    if window !== self.panel && window !== buttonWindow && window.level == .normal {
                         self.autoClose()
                     }
                 }
