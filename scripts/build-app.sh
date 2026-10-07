@@ -41,8 +41,13 @@ print(f"Repointed KeyboardShortcuts resource fallback -> {new.decode()}")
 PY
 fi
 
-codesign --force --deep --sign - "$APP"
-echo "Built $APP"
+# Sign with the first "Apple Development" identity if one exists (override with
+# QUITTER_SIGN_IDENTITY). A stable identity keeps privacy grants such as Accessibility valid
+# across rebuilds; ad-hoc signatures change with every build, so macOS drops the grant.
+IDENTITY="${QUITTER_SIGN_IDENTITY:-$(security find-identity -v -p codesigning 2>/dev/null \
+    | grep -m1 -o '"Apple Development[^"]*"' | tr -d '"')}"
+codesign --force --deep --sign "${IDENTITY:--}" "$APP"
+echo "Built $APP (signed: ${IDENTITY:-ad-hoc})"
 
 if [ "${1:-}" = "--install" ]; then
     pkill -x Quitter || true
