@@ -134,5 +134,21 @@ One entry per phase gate (PLAN §9). Evidence = command output, `pgrep`, window-
   running and Calculator frontmost, ⌃⌥9 → at +500 ms `Safari=[] Notes=[]`, Calculator still
   running, no panel window (no layer-101 window in the list).
 
+- **Menu bar tidy-up (post-plan feature).** Findings on macOS 27: status icons are composited by
+  `MenuBarAgent` (no per-app windows), but each app's `AXExtrasMenuBar` lists them with frames
+  (23 items, Accessibility only). A synthetic ⌘-drag moves another app's icon if the pointer
+  pauses over the drop point. The classic 10 000 pt divider no longer works: macOS capped it,
+  Umbra stayed visible and the bar overflowed. A divider reaching exactly the screen's left edge
+  hides cleanly (600 pt on the 1440 pt display hid Umbra only; 1200 pt made macOS drop the divider).
+  Shipped: Settings › Menu Bar list → "Hide Shottr" moved Shottr left of the divider and stored
+  its right neighbour (Wispr Flow) (`evidence/menubar-1-moved.png`); ‹ → Shottr and divider gone,
+  every other icon in place (`menubar-2-hidden.png`); reveal → auto-hid again after 10 s;
+  un-hide → Shottr back between Umbra and Wispr Flow (`menubar-3-restored.png`). Turning the
+  feature off removed ‹ and the divider. Idle CPU with the feature on: 0.0 % across six samples in
+  30 s. Bugs found and fixed while testing: Quitter's own icon created after the hider ended up
+  on the hidden side (now created first, with an `autosaveName`, plus a start-up layout repair);
+  drags computed on the display whose menu bar was hidden by a fullscreen app (frames are now
+  translated to the active display). `make test` → 28 tests / 6 suites.
+
 DEBUG-only verification aids remain in
 `AppDelegate` (`QUITTER_REGULAR_POLICY`, `QUITTER_APPEARANCE`); they are compiled out of release.

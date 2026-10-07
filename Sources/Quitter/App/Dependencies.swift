@@ -12,6 +12,7 @@ final class Dependencies {
     let loginItem: LoginItem
     let settingsWindow: SettingsWindowController
     let hotkeys: Hotkeys
+    let hider: MenuBarHider
     let panelModel: PanelModel
     let statusBar: StatusBarController
 
@@ -34,15 +35,19 @@ final class Dependencies {
         sampler.onFirstSample = { panelModel.freezeSortOrder() }
         loginItem = LoginItem()
         let navigation = SettingsNavigation()
+        statusBar = StatusBarController(model: panelModel, settings: settings, sampler: sampler)
+        // After Quitter's own icon: new status items appear to the left of existing ones, so the
+        // hider's chevron and divider must come second or Quitter's icon would end up hidden.
+        hider = MenuBarHider(ownItem: statusBar.statusItemForLayout)
         settingsWindow = SettingsWindowController(dependencies: SettingsDependencies(
             settings: settings,
             protected: protected,
             groups: groups,
             loginItem: loginItem,
             monitor: monitor,
+            hider: hider,
             navigation: navigation
         ))
-        statusBar = StatusBarController(model: panelModel, settings: settings, sampler: sampler)
         let statusBar = statusBar
         let settingsWindow = settingsWindow
         panelModel.onOpenSettings = {

@@ -24,8 +24,11 @@ their row after a few seconds. Quitter never force-quits anything on its own.
 - **Keyboard first**: type to search, ↑/↓ to move, Space to tick, Return to quit, Esc to close
 - **Protected apps** that never appear in the list (Finder by default; Quitter itself always)
 - **Sort** by name, memory, CPU or launch time; rows don't jump around while numbers update
+- **Menu bar tidy-up** (optional): pick the menu bar icons you rarely use from a list; they hide
+  behind a small ‹ button and come back with one click. The apps keep running
 - **Settings** window in the System Settings style; launch at login
-- No network access, no analytics, no special permissions
+- No network access, no analytics. No permissions needed, except Accessibility for the optional
+  menu bar tidy-up (never Screen Recording)
 
 ## Requirements
 
@@ -60,6 +63,20 @@ Other targets: `make run` (debug run, no bundle), `make test`, `make app` (build
 | Quit selected | Return or the Quit button |
 | Close | Esc (clears the search first) |
 | Settings | ⌘, or the gear; right-click the menu bar icon for more |
+
+## Hiding menu bar icons
+
+Settings › Menu Bar › **Hide selected menu bar icons** adds a `‹` button and a thin divider to the
+menu bar and lists every app icon currently in it. Switch an icon on and Quitter moves it left of
+the divider (the same ⌘-drag you could do by hand); click `‹` to hide or show them all. Revealed
+icons hide again after 10 s (adjustable). Switching an icon off puts it back where it was.
+
+It needs Accessibility permission (to read icon positions and move them) and nothing else: no
+Screen Recording, no background polling. Hiding is a single change to the divider's width.
+
+Limits on macOS 27: the divider is sized for the display whose menu bar you're using; on a second
+display of very different width, hidden icons may show there. System icons (Wi-Fi, Sound, clock)
+are managed in System Settings › Menu Bar.
 
 ## How it works
 

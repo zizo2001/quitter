@@ -1,7 +1,7 @@
 import SwiftUI
 
 enum SettingsPane: String, CaseIterable, Identifiable {
-    case general, groups, protected, shortcuts, about
+    case general, groups, protected, menuBar, shortcuts, about
 
     var id: String { rawValue }
 
@@ -10,6 +10,7 @@ enum SettingsPane: String, CaseIterable, Identifiable {
         case .general: "General"
         case .groups: "Groups"
         case .protected: "Protected"
+        case .menuBar: "Menu Bar"
         case .shortcuts: "Shortcuts"
         case .about: "About"
         }
@@ -20,6 +21,7 @@ enum SettingsPane: String, CaseIterable, Identifiable {
         case .general: "gearshape"
         case .groups: "square.stack"
         case .protected: "lock.shield"
+        case .menuBar: "menubar.rectangle"
         case .shortcuts: "keyboard"
         case .about: "info.circle"
         }
@@ -30,6 +32,7 @@ enum SettingsPane: String, CaseIterable, Identifiable {
         case .general: .gray
         case .groups: .blue
         case .protected: .green
+        case .menuBar: .indigo
         case .shortcuts: .purple
         case .about: .gray
         }
@@ -52,6 +55,7 @@ struct SettingsDependencies {
     let groups: GroupStore
     let loginItem: LoginItem
     let monitor: AppMonitor
+    let hider: MenuBarHider
     let navigation: SettingsNavigation
 }
 
@@ -89,6 +93,8 @@ struct SettingsView: View {
             GroupsPane(store: dependencies.groups, monitor: dependencies.monitor, navigation: navigation)
         case .protected:
             ProtectedPane(store: dependencies.protected, monitor: dependencies.monitor)
+        case .menuBar:
+            MenuBarPane(hider: dependencies.hider)
         case .shortcuts:
             ShortcutsPane(groups: dependencies.groups)
         case .about:

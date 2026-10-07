@@ -10,6 +10,9 @@ final class StatusBarController: NSObject {
     private var resignObserver: NSObjectProtocol?
     private var lastAutoClose: Date = .distantPast
 
+    /// The menu bar icon itself, so the hider can keep it on the visible side.
+    var statusItemForLayout: NSStatusItem { statusItem }
+
     var isPanelVisible: Bool { panel.isVisible && !panel.isClosing }
 
     private let model: PanelModel
@@ -21,6 +24,7 @@ final class StatusBarController: NSObject {
         self.settings = settings
         self.sampler = sampler
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+        statusItem.autosaveName = "QuitterMain"
         super.init()
         configureButton()
         model.onClose = { [weak self] in self?.closePanel() }
