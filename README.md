@@ -18,7 +18,8 @@ their row after a few seconds. Quitter never force-quits anything on its own.
   (memory includes helper processes, matching Activity Monitor)
 - **Multi-quit**: tick several apps, one click quits them all
 - **Force Quit escalation**: a row that hasn't quit after 2–30 s (you choose) offers Force Quit
-- **Quit Groups**: save a set of apps ("Focus" = Safari + Notes) and select them with one click
+- **Quit Groups**: save a set of apps ("Focus" = Safari + Notes), select them with one click, or
+  give a group its own hotkey that quits it without opening the panel
 - **Global hotkey** to open the panel from any app
 - **Keyboard first**: type to search, ↑/↓ to move, Space to tick, Return to quit, Esc to close
 - **Protected apps** that never appear in the list (Finder by default; Quitter itself always)

@@ -11,6 +11,7 @@ final class Dependencies {
     let sampler: UsageSampler
     let loginItem: LoginItem
     let settingsWindow: SettingsWindowController
+    let hotkeys: Hotkeys
     let panelModel: PanelModel
     let statusBar: StatusBarController
 
@@ -48,7 +49,11 @@ final class Dependencies {
             statusBar.closePanel()
             settingsWindow.show()
         }
-        Hotkeys.install { statusBar.togglePanel() }
+        hotkeys = Hotkeys(
+            groups: groups,
+            togglePanel: { statusBar.togglePanel() },
+            quitGroup: { panelModel.quitGroup($0) }
+        )
         statusBar.loginItem = loginItem
         statusBar.onOpenSettings = { settingsWindow.show() }
         panelModel.onSaveSelectionAsGroup = { bundleIDs in

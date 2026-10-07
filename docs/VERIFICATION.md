@@ -126,5 +126,13 @@ One entry per phase gate (PLAN §9). Evidence = command output, `pgrep`, window-
 | Copy KS bundle to `Contents/Resources` | Same + repoint fallback path in binary | Accessor never looks in `Contents/Resources` |
 | No default hotkey; gate example ⌃⌥Q | User set Caps Lock + Q (Hyperkey ⇒ ⌃⌥⇧⌘Q) | Aziz's request mid-build |
 
-Not done: phase 9 stretch (per-group hotkeys). DEBUG-only verification aids remain in
+- **Phase 9 — per-group hotkeys.** `Hotkeys` keeps one `KeyboardShortcuts.Name("group-<uuid>")`
+  handler per Quit Group in sync with `GroupStore` (new group → registered; deleted group →
+  handler removed and stored shortcut reset). Settings › Shortcuts › Quit Groups shows a Recorder
+  per group. Recorded ⌃⌥9 for "Focus" (`{"carbonKeyCode":25,"carbonModifiers":6144}`; ⌃⌥F never
+  reached the Recorder — another running app owns it globally). With Safari 39682 and Notes 39685
+  running and Calculator frontmost, ⌃⌥9 → at +500 ms `Safari=[] Notes=[]`, Calculator still
+  running, no panel window (no layer-101 window in the list).
+
+DEBUG-only verification aids remain in
 `AppDelegate` (`QUITTER_REGULAR_POLICY`, `QUITTER_APPEARANCE`); they are compiled out of release.

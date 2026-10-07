@@ -90,7 +90,7 @@ struct SettingsView: View {
         case .protected:
             ProtectedPane(store: dependencies.protected, monitor: dependencies.monitor)
         case .shortcuts:
-            ShortcutsPane()
+            ShortcutsPane(groups: dependencies.groups)
         case .about:
             AboutPane()
         }

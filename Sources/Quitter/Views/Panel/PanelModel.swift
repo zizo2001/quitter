@@ -121,6 +121,14 @@ final class PanelModel {
         }
     }
 
+    /// Group hotkey: quit the group's running, unprotected members immediately (no panel, no
+    /// confirmation; the hotkey itself is the explicit request).
+    func quitGroup(_ id: UUID) {
+        guard let chip = chips.first(where: { $0.id == id }), !chip.pids.isEmpty else { return }
+        selection.subtract(chip.pids)
+        coordinator.quit(pids: chip.pids)
+    }
+
     func saveSelectionAsGroup() {
         var seen = Set<String>()
         let bundleIDs = visibleApps
